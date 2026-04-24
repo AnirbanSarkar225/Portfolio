@@ -120,6 +120,8 @@ function countUp(id,target){
 
 function applyUser(user,repos){
   var stars=repos.reduce(function(s,r){return s+r.stargazers_count;},0);
+  var av=document.getElementById('avatar');
+  if(av&&user.avatar_url)av.src=user.avatar_url;
   setText('gh-display-name',user.name||GH);
   setText('gh-bio-text',user.bio||'Full-Stack Developer from Kolkata, India');
   setText('gh-repo-count',user.public_repos||'—');

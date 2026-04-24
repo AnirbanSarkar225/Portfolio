@@ -101,7 +101,7 @@ nav.hide { transform: translateY(-100%); }
   align-items: center; gap: 20px;
   opacity: 0; animation: fadeIn 1s ease .6s forwards;
 }
-.ring-wrap { position: relative; width: 180px; height: 180px; }
+.ring-wrap { position: relative; width: 180px; height: 180px; overflow: visible; }
 .ring-wrap::before {
   content:''; position:absolute; inset:-14px; border-radius:50%;
   border:1.5px dashed rgba(110,231,183,.2); animation:spin 10s linear infinite;
