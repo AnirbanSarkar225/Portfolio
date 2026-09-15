@@ -1,266 +1,307 @@
-(function(){
-'use strict';
+/**
+ * anirban® — Luxury Editorial Portfolio Interactive Engine
+ * Matches styling and behaviors from D:\Port.mp4 (norell® aesthetic)
+ */
 
-var cur=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
-var mx=0,my=0,rx=0,ry=0;
-if(cur){document.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;cur.style.transform='translate('+mx+'px,'+my+'px) translate(-50%,-50%)';});}
-if(ring){(function loop(){rx+=(mx-rx)*.1;ry+=(my-ry)*.1;ring.style.transform='translate('+rx+'px,'+ry+'px) translate(-50%,-50%)';requestAnimationFrame(loop);})();}
+(function () {
+  'use strict';
 
-document.getElementById('year').textContent=new Date().getFullYear();
+  // ── 1. Custom Magnetic Project Cursor ──
+  const cursor = document.getElementById('project-cursor');
+  let mouseX = 0, mouseY = 0;
+  let cursorX = 0, cursorY = 0;
 
-var lastScroll=0;
-var nav=document.querySelector('nav');
-window.addEventListener('scroll',function(){
-  var st=window.scrollY;
-  if(st>lastScroll&&st>100)nav.classList.add('hide');
-  else nav.classList.remove('hide');
-  lastScroll=st;
-},{passive:true});
+  if (cursor && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
 
-var hamburger=document.querySelector('.hamburger');
-var menu=document.getElementById('nav-menu');
-if(hamburger){
-  hamburger.addEventListener('click',function(){
-    menu.classList.toggle('open');
-    var spans=hamburger.querySelectorAll('span');
-    if(menu.classList.contains('open')){
-      spans[0].style.transform='rotate(45deg) translate(4px,4px)';
-      spans[1].style.opacity='0';
-      spans[2].style.transform='rotate(-45deg) translate(4px,-4px)';
-    }else{
-      spans[0].style.transform='none';
-      spans[1].style.opacity='1';
-      spans[2].style.transform='none';
+    function renderCursor() {
+      // Smooth lerp (linear interpolation)
+      cursorX += (mouseX - cursorX) * 0.18;
+      cursorY += (mouseY - cursorY) * 0.18;
+      cursor.style.transform = `translate(${cursorX}px, ${cursorY}px) translate(-50%, -50%)`;
+      requestAnimationFrame(renderCursor);
     }
-  });
-  menu.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){menu.classList.remove('open');var spans=hamburger.querySelectorAll('span');spans[0].style.transform='none';spans[1].style.opacity='1';spans[2].style.transform='none';});});
-}
+    requestAnimationFrame(renderCursor);
 
-var observer=new IntersectionObserver(function(entries){
-  entries.forEach(function(e){
-    if(!e.isIntersecting)return;
-    var el=e.target;
-    var delay=el.dataset.delay||0;
-    setTimeout(function(){
-      el.classList.add('visible');
-      el.querySelectorAll('.skill-progress').forEach(function(f){f.style.width=f.dataset.w+'%';});
-      el.querySelectorAll('.focus-bar').forEach(function(f){setTimeout(function(){f.style.width=f.dataset.w+'%';},100);});
-      var rp=el.querySelector('#radar-polygon');
-      if(rp){rp.style.opacity='1';el.querySelectorAll('.radar-dot').forEach(function(d){d.style.opacity='1';});}
-    },delay*1);
-    observer.unobserve(el);
-  });
-},{threshold:0.08});
-document.querySelectorAll('[data-animate]').forEach(function(el){observer.observe(el);});
+    // Attach hover triggers to editorial project cards and media frames
+    const hoverTargets = document.querySelectorAll('.editorial-card, .card-media-wrap, .media-banner-frame');
+    hoverTargets.forEach((el) => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('visible'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('visible'));
+    });
+  }
 
-var loader=document.getElementById('loader');
-var lFill=document.getElementById('loader-fill');
-var lStatus=document.getElementById('loader-status');
-function setProgress(p,t){lFill.style.width=p+'%';lStatus.textContent=t;}
-function hideLoader(){loader.classList.add('done');}
+  // ── 2. Fullscreen Drawer Navigation Menu ──
+  const menuToggle = document.getElementById('menu-toggle');
+  const menuClose = document.getElementById('menu-close');
+  const fullscreenMenu = document.getElementById('fullscreen-menu');
+  const menuLinks = document.querySelectorAll('.menu-link');
 
-var GH='AnirbanSarkar225';
-var CACHE_KEY='portfolio_gh_'+GH;
-var TTL=30*60*1000;
+  function openMenu() {
+    if (!fullscreenMenu) return;
+    fullscreenMenu.classList.add('open');
+    fullscreenMenu.setAttribute('aria-hidden', 'false');
+    menuToggle?.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  }
 
-function apiCall(path){
-  return fetch('https://api.github.com/'+path,{headers:{Accept:'application/vnd.github.v3+json'}}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();});
-}
+  function closeMenu() {
+    if (!fullscreenMenu) return;
+    fullscreenMenu.classList.remove('open');
+    fullscreenMenu.setAttribute('aria-hidden', 'true');
+    menuToggle?.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
 
-function loadCache(){
-  try{var raw=localStorage.getItem(CACHE_KEY);if(!raw)return null;var obj=JSON.parse(raw);if(Date.now()-obj.ts<TTL)return obj.data;}catch(e){}
-  return null;
-}
-function saveCache(data){
-  try{localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data:data}));}catch(e){}
-}
+  menuToggle?.addEventListener('click', openMenu);
+  menuClose?.addEventListener('click', closeMenu);
 
-function fetchGitHub(){
-  var cached=loadCache();
-  if(cached)return Promise.resolve(cached);
-  setProgress(20,'FETCHING PROFILE...');
-  return apiCall('users/'+GH).then(function(user){
-    setProgress(45,'LOADING REPOSITORIES...');
-    return apiCall('users/'+GH+'/repos?per_page=100&sort=updated').then(function(repos){
-      setProgress(65,'ANALYZING LANGUAGES...');
-      var top=repos.filter(function(r){return !r.fork;}).sort(function(a,b){return b.stargazers_count-a.stargazers_count;}).slice(0,8);
-      var langPromises=top.map(function(repo){
-        return apiCall('repos/'+GH+'/'+repo.name+'/languages').then(function(langs){repo._langs=langs;}).catch(function(){repo._langs={};});
-      });
-      return Promise.all(langPromises).then(function(){
-        var data={user:user,repos:repos};
-        saveCache(data);
-        return data;
-      });
+  menuLinks.forEach((link) => {
+    link.addEventListener('click', () => {
+      closeMenu();
     });
   });
-}
 
-function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
-
-function countUp(id,target){
-  var el=document.getElementById(id);
-  if(!el)return;
-  var io2=new IntersectionObserver(function(entries){
-    if(!entries[0].isIntersecting)return;
-    io2.disconnect();
-    var start=null,dur=1200;
-    function step(ts){
-      if(!start)start=ts;
-      var p=Math.min((ts-start)/dur,1);
-      var ease=1-Math.pow(1-p,3);
-      el.textContent=Math.round(ease*target);
-      if(p<1)requestAnimationFrame(step);
-      else el.textContent=target;
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && fullscreenMenu?.classList.contains('open')) {
+      closeMenu();
     }
-    requestAnimationFrame(step);
   });
-  io2.observe(el);
-}
 
-function applyUser(user,repos){
-  var stars=repos.reduce(function(s,r){return s+r.stargazers_count;},0);
-  var av=document.getElementById('avatar');
-  if(av&&user.avatar_url)av.src=user.avatar_url;
-  setText('gh-display-name',user.name||GH);
-  setText('gh-bio-text',user.bio||'Full-Stack Developer from Kolkata, India');
-  setText('gh-repo-count',user.public_repos||'—');
-  setText('gh-follower-count',user.followers||'—');
-  setText('gh-star-count',stars);
-  setText('meta-repos',user.public_repos||'—');
-  setText('meta-stars',stars);
-  setText('meta-followers',user.followers||'—');
-  countUp('stat-repos',user.public_repos||0);
-  countUp('stat-stars',stars);
-  countUp('stat-followers',user.followers||0);
-  countUp('stat-following',user.following||0);
-  var now=new Date();
-  setText('fetch-time','FETCHED: '+now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+' · '+now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}));
-  setText('footer-stats',(user.public_repos||'—')+' REPOS · '+stars+' STARS · '+GH);
-}
+  // ── 3. Sticky Header Scroll Behavior ──
+  const siteHeader = document.getElementById('site-header');
+  let lastScrollY = window.scrollY;
 
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-
-var PROJ_META={
-  'AlphaRail':{desc:'Full-stack Railway Management System — FastAPI backend, JavaScript frontend, real-time scheduling, booking flows, admin dashboards, and REST API architecture.',tags:['FastAPI','Python','JavaScript','REST API']},
-  'inventory-management':{desc:'Maven-based Java Swing desktop app with SQLite persistence, role-based authentication, and 8 operational modules.',tags:['Java','Swing','SQLite','Maven']}
-};
-var FALLBACK=[
-  {name:'AlphaRail',description:'Full-stack Railway Management System with FastAPI + JavaScript.',language:'Python',stargazers_count:0,html_url:'https://github.com/'+GH,updated_at:'2025-01-01'},
-  {name:'Inventory Management',description:'Maven Java Swing desktop app with SQLite and role-based auth.',language:'Java',stargazers_count:0,html_url:'https://github.com/'+GH,updated_at:'2025-01-01'},
-  {name:'OpenEnv AI Agent',description:'Custom AI agent training environment for Meta PyTorch Hackathon.',language:'Python',stargazers_count:0,html_url:'https://github.com/'+GH,updated_at:'2025-01-01'},
-  {name:'Competitive Programming',description:'Algorithmic solutions — binary search, graphs, peak-finding.',language:'Python',stargazers_count:0,html_url:'https://github.com/'+GH,updated_at:'2025-01-01'}
-];
-
-function buildProjects(repos){
-  var grid=document.getElementById('projects-grid');
-  var loading=document.getElementById('projects-loading');
-  if(loading)loading.remove();
-  var list=repos.length?repos.filter(function(r){return !r.fork;}).sort(function(a,b){return(b.stargazers_count-a.stargazers_count)||(new Date(b.updated_at)-new Date(a.updated_at));}).slice(0,6):FALLBACK;
-  list.forEach(function(repo,i){
-    var meta=PROJ_META[repo.name]||{};
-    var card=document.createElement('div');
-    card.className='project-card';
-    card.setAttribute('data-animate','');
-    card.setAttribute('data-delay',String(i*80));
-    var tags=(meta.tags||(repo.language?[repo.language]:[])).filter(Boolean);
-    var stars=repo.stargazers_count||0;
-    var updated=repo.updated_at?new Date(repo.updated_at).toLocaleDateString('en-IN',{month:'short',year:'numeric'}):'';
-    card.innerHTML='<div class="project-index">// 00'+(i+1)+'</div><div class="project-name">'+esc(repo.name||'')+'</div><p class="project-desc">'+esc(meta.desc||repo.description||'A project by Anirban Sarkar.')+'</p><div class="project-tags">'+tags.map(function(t){return '<span class="project-tag">'+esc(t)+'</span>';}).join('')+'</div>'+(stars||updated?'<div class="project-stars">'+(stars?'★ '+stars+' stars':'')+(stars&&updated?' · ':'')+(updated?'Updated '+updated:'')+'</div>':'')+'<a href="'+esc(repo.html_url||'https://github.com/'+GH)+'" target="_blank" class="project-link">VIEW ON GITHUB →</a>';
-    grid.appendChild(card);
-    setTimeout(function(){observer.observe(card);},40*i);
-  });
-}
-
-var LANG_COLORS={Java:'#7c6eff',Python:'#00f5c4',JavaScript:'#ff6b6b',HTML:'#ffd93d',CSS:'#4dd0e1',C:'#a8b3ff',Shell:'#ff9f43','C++':'#f06292',TypeScript:'#4fc3f7',Kotlin:'#e91e63'};
-
-function buildDonut(repos){
-  var agg={};
-  repos.filter(function(r){return !r.fork;}).forEach(function(r){
-    if(r._langs)Object.entries(r._langs).forEach(function(e){agg[e[0]]=(agg[e[0]]||0)+e[1];});
-    else if(r.language)agg[r.language]=(agg[r.language]||0)+1000;
-  });
-  var total=Object.values(agg).reduce(function(s,v){return s+v;},0)||1;
-  var top=Object.entries(agg).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
-  var pcts=top.map(function(e){return {l:e[0],p:Math.round(e[1]/total*100)};});
-  var svg=document.getElementById('donut-chart');
-  var R=50,cx=65,cy=65,C=2*Math.PI*R;
-  var off=-C/4;
-  pcts.forEach(function(item,i){
-    if(!item.p)return;
-    var arc=C*(item.p/100);
-    var c=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    c.setAttribute('cx',cx);c.setAttribute('cy',cy);c.setAttribute('r',R);
-    c.setAttribute('fill','none');
-    c.setAttribute('stroke',LANG_COLORS[item.l]||'hsl('+(i*72+20)+',70%,62%)');
-    c.setAttribute('stroke-width','18');
-    c.setAttribute('stroke-dasharray',arc+' '+(C-arc));
-    c.setAttribute('stroke-dashoffset',-off);
-    svg.insertBefore(c,svg.querySelector('text'));
-    off+=arc;
-  });
-  document.getElementById('donut-label').textContent=top.length+' LANG'+(top.length!==1?'S':'');
-  var ll=document.getElementById('lang-list');
-  ll.innerHTML='';
-  pcts.forEach(function(item,i){
-    var color=LANG_COLORS[item.l]||'hsl('+(i*72+20)+',70%,62%)';
-    var d=document.createElement('div');
-    d.className='lang-entry';
-    d.innerHTML='<div class="lang-color" style="background:'+color+'"></div><span class="lang-name">'+esc(item.l)+'</span><span class="lang-percent">'+item.p+'%</span>';
-    ll.appendChild(d);
-  });
-}
-
-function buildContrib(){
-  var w=document.getElementById('contrib-container');
-  w.innerHTML='';
-  var WEEKS=52;
-  for(var wk=0;wk<WEEKS;wk++){
-    var col=document.createElement('div');
-    col.className='contrib-col';
-    for(var d=0;d<7;d++){
-      var base=wk<8?.08:wk<20?.25:wk<35?.45:wk<45?.62:.78;
-      var r=Math.random();
-      var lv=r<base*.2?4:r<base*.45?3:r<base*.65?2:r<base*.8?1:0;
-      var cell=document.createElement('div');
-      cell.className='contrib-cell lv'+lv;
-      col.appendChild(cell);
+  window.addEventListener('scroll', () => {
+    const currentScrollY = window.scrollY;
+    if (currentScrollY > lastScrollY && currentScrollY > 120) {
+      siteHeader?.classList.add('hidden');
+    } else {
+      siteHeader?.classList.remove('hidden');
     }
-    w.appendChild(col);
+    lastScrollY = currentScrollY;
+  }, { passive: true });
+
+  // ── 4. Interactive Core Expertise Section (00:23 in video) ──
+  const SKILLS_DATA = [
+    {
+      title: 'Backend Architecture',
+      category: 'FastAPI · Python · REST APIs',
+      desc: 'High-performance asynchronous backend architecture with FastAPI and Python. Scalable microservices, automated JWT auth, rate limiting, and robust production-ready API routes.',
+      img: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000&auto=format&fit=crop'
+    },
+    {
+      title: 'Database Engineering',
+      category: 'PostgreSQL · Relational Modeling',
+      desc: 'Relational schema architecture with PostgreSQL. Transactional integrity, ACID compliance, optimized indexing, query performance tuning, and structured data pipelines.',
+      img: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?q=80&w=1000&auto=format&fit=crop'
+    },
+    {
+      title: 'Machine Learning & NLP',
+      category: 'NLP · Scikit-Learn · Classification',
+      desc: 'Automated machine learning pipelines for textual analysis and classification. Real-world dataset preprocessing, TF-IDF vectorization, feature extraction, and NLP misinformation detection.',
+      img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop'
+    },
+    {
+      title: 'Full-Stack & Web Systems',
+      category: 'Modern JavaScript · HTML5/CSS3 · Vercel',
+      desc: 'End-to-end full stack web platforms with clean modern JavaScript, responsive interfaces, state management, seamless third-party API integrations, and continuous cloud deployments.',
+      img: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1000&auto=format&fit=crop'
+    }
+  ];
+
+  const skillItems = document.querySelectorAll('.skill-interactive-item');
+  const skillImg = document.getElementById('skill-preview-img');
+  const skillCat = document.getElementById('skill-preview-category');
+  const skillDesc = document.getElementById('skill-preview-desc');
+
+  function activateSkill(index) {
+    const data = SKILLS_DATA[index];
+    if (!data) return;
+
+    skillItems.forEach((item, idx) => {
+      item.classList.toggle('active', idx === index);
+    });
+
+    if (skillImg) {
+      skillImg.style.opacity = '0';
+      setTimeout(() => {
+        skillImg.src = data.img;
+        skillImg.style.opacity = '1';
+      }, 200);
+    }
+    if (skillCat) skillCat.textContent = data.category;
+    if (skillDesc) skillDesc.textContent = data.desc;
   }
-  setTimeout(function(){w.scrollLeft=w.scrollWidth;},60);
-}
 
-function fallbackDonut(){
-  buildDonut([{_langs:{Java:38000,Python:32000,JavaScript:20000,HTML:10000},fork:false}]);
-}
+  skillItems.forEach((item) => {
+    const idx = parseInt(item.getAttribute('data-index') || '0', 10);
+    item.addEventListener('mouseenter', () => activateSkill(idx));
+    item.addEventListener('click', () => activateSkill(idx));
+  });
 
-async function main(){
-  setProgress(5,'INITIALISING...');
-  buildContrib();
-  try{
-    var data=await fetchGitHub();
-    setProgress(85,'RENDERING...');
-    applyUser(data.user,data.repos);
-    buildProjects(data.repos);
-    buildDonut(data.repos);
-  }catch(err){
-    console.warn('GitHub API unavailable:',err.message);
-    setProgress(85,'OFFLINE MODE...');
-    applyUser({name:'Anirban Sarkar',bio:'Full-Stack Developer · VP @ Build2Hack · Kolkata, India',public_repos:10,followers:5,following:10},[]);
-    buildProjects([]);
-    fallbackDonut();
+  // ── 5. Metric Counter Animations ──
+  const metricNumbers = document.querySelectorAll('.metric-number[data-target]');
+  let metricsAnimated = false;
+
+  function runCounters() {
+    metricNumbers.forEach((el) => {
+      const target = parseInt(el.getAttribute('data-target') || '0', 10);
+      const duration = 1600;
+      const startTime = performance.now();
+
+      function updateNumber(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease-out cubic
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.floor(easeOut * target);
+
+        if (progress < 1) {
+          requestAnimationFrame(updateNumber);
+        } else {
+          el.textContent = target;
+        }
+      }
+      requestAnimationFrame(updateNumber);
+    });
   }
-  setProgress(100,'READY');
-  await new Promise(function(r){setTimeout(r,400);});
-  hideLoader();
-  document.querySelectorAll('[data-animate]').forEach(function(el){observer.observe(el);});
-}
-main();
 
-setInterval(function(){
-  localStorage.removeItem(CACHE_KEY);
-  fetchGitHub().then(function(data){applyUser(data.user,data.repos);}).catch(function(){});
-},TTL);
+  const metricsSection = document.querySelector('.metrics-grid');
+  if (metricsSection) {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !metricsAnimated) {
+        metricsAnimated = true;
+        runCounters();
+        observer.disconnect();
+      }
+    }, { threshold: 0.25 });
+    observer.observe(metricsSection);
+  }
+
+  // ── 6. Engagement Models Toggle (00:32 in video) ──
+  const tabProject = document.getElementById('tab-project');
+  const tabFulltime = document.getElementById('tab-fulltime');
+
+  const p1Sym = document.getElementById('p1-sym');
+  const p1Title = document.getElementById('p1-title');
+  const p1Sub = document.getElementById('p1-sub');
+  const p1Desc = document.getElementById('p1-desc');
+  const p1Features = document.getElementById('p1-features');
+
+  const p2Sym = document.getElementById('p2-sym');
+  const p2Title = document.getElementById('p2-title');
+  const p2Sub = document.getElementById('p2-sub');
+  const p2Desc = document.getElementById('p2-desc');
+  const p2Features = document.getElementById('p2-features');
+
+  function setEngagementMode(mode) {
+    if (mode === 'project') {
+      tabProject?.classList.add('active');
+      tabFulltime?.classList.remove('active');
+
+      if (p1Sym) p1Sym.textContent = '🚀';
+      if (p1Title) p1Title.textContent = 'Sprint';
+      if (p1Sub) p1Sub.textContent = '/MVP Launch';
+      if (p1Desc) p1Desc.textContent = 'Ideal for early-stage prototypes, hackathons, or standalone backend/frontend features.';
+      if (p1Features) {
+        p1Features.innerHTML = `
+          <li><span class="check-icon">✓</span> Rapid FastAPI or Web MVP Development</li>
+          <li><span class="check-icon">✓</span> PostgreSQL Database Modeling &amp; Migration</li>
+          <li><span class="check-icon">✓</span> REST API Endpoints &amp; Documentation</li>
+          <li><span class="check-icon">✓</span> Vercel or Cloud Deployment Setup</li>
+        `;
+      }
+
+      if (p2Sym) p2Sym.textContent = '⚡';
+      if (p2Title) p2Title.textContent = 'Full-Stack';
+      if (p2Sub) p2Sub.textContent = '/End-to-End';
+      if (p2Desc) p2Desc.textContent = 'Complete product engineering from database schemas to client-side interface and intelligence.';
+      if (p2Features) {
+        p2Features.innerHTML = `
+          <li><span class="check-icon">✓</span> Full-Stack Architecture &amp; Implementation</li>
+          <li><span class="check-icon">✓</span> Machine Learning &amp; NLP Model Integration</li>
+          <li><span class="check-icon">✓</span> PostgreSQL Performance &amp; Query Optimization</li>
+          <li><span class="check-icon">✓</span> Authentication, RBAC &amp; API Security</li>
+          <li><span class="check-icon">✓</span> Ongoing Support &amp; Feature Expansion</li>
+        `;
+      }
+    } else {
+      tabProject?.classList.remove('active');
+      tabFulltime?.classList.add('active');
+
+      if (p1Sym) p1Sym.textContent = '💼';
+      if (p1Title) p1Title.textContent = 'Internship';
+      if (p1Sub) p1Sub.textContent = '/Summer & Winter';
+      if (p1Desc) p1Desc.textContent = 'Available for Software Engineering, Backend Developer, or Machine Learning internships.';
+      if (p1Features) {
+        p1Features.innerHTML = `
+          <li><span class="check-icon">✓</span> Full-Time or Part-Time Flexibility</li>
+          <li><span class="check-icon">✓</span> FastAPI, Python &amp; PostgreSQL Expertise</li>
+          <li><span class="check-icon">✓</span> Git, Agile &amp; Remote Team Workflow</li>
+          <li><span class="check-icon">✓</span> Fast Learner with Strong CS Fundamentals</li>
+        `;
+      }
+
+      if (p2Sym) p2Sym.textContent = '🌟';
+      if (p2Title) p2Title.textContent = 'Full-Time';
+      if (p2Sub) p2Sub.textContent = '/Junior SWE';
+      if (p2Desc) p2Desc.textContent = 'High-ownership engineering role building reliable backends, web systems, and data pipelines.';
+      if (p2Features) {
+        p2Features.innerHTML = `
+          <li><span class="check-icon">✓</span> Backend Engineering &amp; Systems Architecture</li>
+          <li><span class="check-icon">✓</span> Scalable Relational Database Engineering</li>
+          <li><span class="check-icon">✓</span> Applied AI/ML &amp; Data Pipeline Development</li>
+          <li><span class="check-icon">✓</span> Open to Onsite (Kolkata) &amp; Remote Global</li>
+        `;
+      }
+    }
+  }
+
+  tabProject?.addEventListener('click', () => setEngagementMode('project'));
+  tabFulltime?.addEventListener('click', () => setEngagementMode('fulltime'));
+
+  // ── 7. Interactive Contact Form Submission ──
+  const contactForm = document.getElementById('contact-form');
+  const formFeedback = document.getElementById('form-feedback');
+  const submitBtn = document.getElementById('submit-btn');
+
+  contactForm?.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const nameInput = document.getElementById('contact-name');
+    const emailInput = document.getElementById('contact-email');
+    const msgInput = document.getElementById('contact-msg');
+
+    if (!nameInput?.value.trim() || !emailInput?.value.trim()) return;
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>Sending...</span>';
+    }
+
+    // Direct mailto fallback or simulated success
+    setTimeout(() => {
+      if (formFeedback) {
+        formFeedback.textContent = '✓ Thank you! Your message has been prepared. Reaching out directly...';
+        formFeedback.style.color = '#10b981';
+      }
+
+      const subject = encodeURIComponent(`Portfolio Inquiry from ${nameInput.value}`);
+      const body = encodeURIComponent(`Name: ${nameInput.value}\nEmail: ${emailInput.value}\n\nMessage:\n${msgInput?.value}`);
+      window.location.href = `mailto:sarkaranirban405@gmail.com?subject=${subject}&body=${body}`;
+
+      contactForm.reset();
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>Submitted ✓</span>';
+        setTimeout(() => {
+          submitBtn.innerHTML = '<span>Submit</span>';
+        }, 3000);
+      }
+    }, 600);
+  });
 
 })();
