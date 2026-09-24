@@ -304,4 +304,186 @@
     }, 600);
   });
 
+  // ── 8. Scroll-Triggered Reveal Animation System ──
+  function initRevealAnimations() {
+    // Add reveal classes to elements throughout the page
+    const revealMappings = [
+      // Works section
+      { selector: '.works-heading', classes: ['reveal'] },
+      { selector: '.works-intro', classes: ['reveal', 'reveal-d2'] },
+      { selector: '.editorial-card', classes: ['reveal'], stagger: true, staggerBase: 1 },
+      
+      // Journey section
+      { selector: '.journey-heading', classes: ['reveal'] },
+      { selector: '.journey-media', classes: ['reveal-left'] },
+      { selector: '.journey-content', classes: ['reveal-right'] },
+      
+      // Skills section
+      { selector: '.skill-interactive-item', classes: ['reveal'], stagger: true, staggerBase: 1 },
+      { selector: '.skills-preview-card', classes: ['reveal-scale'] },
+      
+      // About section
+      { selector: '.about-pill', classes: ['reveal'] },
+      { selector: '.about-big-statement', classes: ['reveal', 'reveal-d1'] },
+      { selector: '.metric-item', classes: ['reveal'], stagger: true, staggerBase: 1 },
+      
+      // Media banner
+      { selector: '.media-banner-frame', classes: ['reveal-scale'] },
+      
+      // Pricing section
+      { selector: '.pricing-heading', classes: ['reveal'] },
+      { selector: '.pricing-toggle-wrap', classes: ['reveal', 'reveal-d2'] },
+      { selector: '.pricing-card', classes: ['reveal'], stagger: true, staggerBase: 1 },
+      
+      // Honors section
+      { selector: '.honors-heading', classes: ['reveal'] },
+      { selector: '.honor-row', classes: ['reveal'], stagger: true, staggerBase: 1 },
+      
+      // Journal section
+      { selector: '.journal-pill-wrap', classes: ['reveal'] },
+      { selector: '.journal-card', classes: ['reveal'], stagger: true, staggerBase: 1 },
+      
+      // Contact section
+      { selector: '.contact-form-side', classes: ['reveal-left'] },
+      { selector: '.contact-info-side', classes: ['reveal-right'] },
+      
+      // Footer
+      { selector: '.giant-footer-brand', classes: ['reveal-scale'] },
+      { selector: '.footer-nav-row', classes: ['reveal', 'reveal-d2'] },
+    ];
+
+    revealMappings.forEach(({ selector, classes, stagger, staggerBase }) => {
+      const elements = document.querySelectorAll(selector);
+      elements.forEach((el, i) => {
+        classes.forEach(cls => {
+          // For staggered items, replace the delay class with the correct index
+          if (cls.startsWith('reveal-d') && stagger) return;
+          el.classList.add(cls);
+        });
+        if (stagger) {
+          const delayIndex = Math.min((staggerBase || 0) + i, 6);
+          el.classList.add(`reveal-d${delayIndex}`);
+        }
+      });
+    });
+
+    // Create intersection observer for reveal animations
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.12,
+      rootMargin: '0px 0px -60px 0px'
+    });
+
+    // Observe all reveal elements
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => {
+      revealObserver.observe(el);
+    });
+  }
+
+  // ── 9. Smooth Parallax on Hero Portrait ──
+  const heroImg = document.getElementById('hero-img');
+  if (heroImg && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          const heroRect = heroImg.closest('.hero-visual-frame')?.getBoundingClientRect();
+          if (heroRect && heroRect.bottom > 0) {
+            const parallaxOffset = scrollY * 0.08;
+            heroImg.style.transform = `translateY(${parallaxOffset}px) scale(1.02)`;
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+  }
+
+  // ── 10. Magnetic Hover Tilt on Project Cards ──
+  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    const editorialCards = document.querySelectorAll('.editorial-card');
+    editorialCards.forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = ((y - centerY) / centerY) * -3;
+        const rotateY = ((x - centerX) / centerX) * 3;
+        card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(800px) rotateX(0) rotateY(0) translateY(0)';
+      });
+    });
+  }
+
+  // ── 11. Smooth Text Scramble on Section Headings ──
+  function textScrambleReveal(element) {
+    const finalText = element.textContent;
+    const chars = '!<>-_\/[]{}—=+*^?#_';
+    let iteration = 0;
+    const interval = setInterval(() => {
+      element.textContent = finalText
+        .split('')
+        .map((char, index) => {
+          if (index < iteration) return finalText[index];
+          if (char === ' ' || char === '\n') return char;
+          return chars[Math.floor(Math.random() * chars.length)];
+        })
+        .join('');
+      if (iteration >= finalText.length) clearInterval(interval);
+      iteration += 1 / 2;
+    }, 30);
+  }
+
+  // Apply text scramble to the giant footer brand on scroll
+  const footerBrandText = document.querySelector('.footer-brand-text');
+  if (footerBrandText) {
+    let footerScrambled = false;
+    const footerObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !footerScrambled) {
+        footerScrambled = true;
+        textScrambleReveal(footerBrandText);
+        footerObserver.disconnect();
+      }
+    }, { threshold: 0.5 });
+    footerObserver.observe(footerBrandText);
+  }
+
+  // ── 12. Active Nav Highlight on Scroll ──
+  const sections = document.querySelectorAll('section[id]');
+  const navItems = document.querySelectorAll('.desktop-nav .nav-item');
+
+  if (sections.length && navItems.length) {
+    const navObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          navItems.forEach(item => {
+            item.classList.toggle('active', item.getAttribute('href') === `#${id}`);
+          });
+        }
+      });
+    }, { threshold: 0.3, rootMargin: '-80px 0px -50% 0px' });
+
+    sections.forEach(section => navObserver.observe(section));
+  }
+
+  // Initialize reveal system after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRevealAnimations);
+  } else {
+    initRevealAnimations();
+  }
+
 })();

@@ -196,9 +196,14 @@ img {
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.nav-item:hover::after {
+.nav-item:hover::after,
+.nav-item.active::after {
   transform: scaleX(1);
   transform-origin: left;
+}
+
+.nav-item.active {
+  color: var(--accent-red);
 }
 
 .menu-toggle-btn {
@@ -1495,6 +1500,275 @@ img {
 
 .footer-legal-right a:hover {
   color: var(--accent-red);
+}
+
+/* ── Scroll-Triggered Reveal Animation System ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(48px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delay utility classes */
+.reveal-d1 { transition-delay: 0.08s; }
+.reveal-d2 { transition-delay: 0.16s; }
+.reveal-d3 { transition-delay: 0.24s; }
+.reveal-d4 { transition-delay: 0.32s; }
+.reveal-d5 { transition-delay: 0.40s; }
+.reveal-d6 { transition-delay: 0.48s; }
+
+/* Directional variants */
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-60px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-left.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(60px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-right.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-scale.revealed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ── Hero Entrance Sequence ── */
+@keyframes heroFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes heroTitleSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroBadgePop {
+  from {
+    opacity: 0;
+    transform: scale(0) rotate(-20deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes statusBarSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatBadge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.hero-top-text {
+  animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.hero-visual-frame {
+  animation: heroScaleIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+.hero-giant-title span {
+  animation: heroTitleSlideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+}
+
+.hero-badge-r {
+  animation: heroBadgePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s both;
+}
+
+.hero-badge-r {
+  animation: heroBadgePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s both,
+             floatBadge 3s ease-in-out 1.5s infinite;
+}
+
+.hero-status-bar {
+  animation: statusBarSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.85s both;
+}
+
+/* ── Fullscreen Menu Enhanced Transitions ── */
+.fullscreen-menu .menu-link {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.4s ease, transform 0.4s ease, color 0.3s ease;
+}
+
+.fullscreen-menu.open .menu-link {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fullscreen-menu.open .menu-link:nth-child(1) { transition-delay: 0.15s; }
+.fullscreen-menu.open .menu-link:nth-child(2) { transition-delay: 0.22s; }
+.fullscreen-menu.open .menu-link:nth-child(3) { transition-delay: 0.29s; }
+.fullscreen-menu.open .menu-link:nth-child(4) { transition-delay: 0.36s; }
+.fullscreen-menu.open .menu-link:nth-child(5) { transition-delay: 0.43s; }
+.fullscreen-menu.open .menu-link:nth-child(6) { transition-delay: 0.50s; }
+
+.fullscreen-menu .menu-footer {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease 0.55s, transform 0.5s ease 0.55s;
+}
+
+.fullscreen-menu.open .menu-footer {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Magnetic Tilt on Project Cards ── */
+.editorial-card {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Honor Row Stagger ── */
+.honor-row {
+  transition: transform 0.25s ease, background 0.25s ease, opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Skill Item Active Indicator Bar ── */
+.skill-interactive-item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent-red);
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.skill-interactive-item {
+  position: relative;
+}
+
+.skill-interactive-item.active::after {
+  width: 100%;
+}
+
+/* ── Journal Card Hover Lift ── */
+.journal-card {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s ease;
+}
+
+.journal-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Contact Form Field Focus Glow ── */
+.form-group input:focus,
+.form-group textarea:focus {
+  box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.1);
+}
+
+/* ── Footer Brand Text Hover Gradient ── */
+.footer-brand-text {
+  transition: letter-spacing 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.giant-footer-brand:hover .footer-brand-text {
+  letter-spacing: -0.02em;
+}
+
+/* ── Pricing Card Shimmer on Featured ── */
+.featured-plan {
+  overflow: hidden;
+}
+
+.featured-plan::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 40%,
+    rgba(255, 59, 48, 0.03) 50%,
+    transparent 60%
+  );
+  animation: shimmer 6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translate(-30%, -30%) rotate(0deg); }
+  100% { transform: translate(30%, 30%) rotate(0deg); }
+}
+
+/* ── Respect Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal,
+  .reveal-left,
+  .reveal-right,
+  .reveal-scale {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* ── Responsive Breakpoints ── */
